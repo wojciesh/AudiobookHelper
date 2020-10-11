@@ -2,5 +2,6 @@
 Audiobook player with auto-resuming feature.
 Persists browser closing (using localStorage).
 
-Put mp3 files in the same directory.
+Put your audio files in the same directory.
 Name your audio files like this: '01.mp3', '02.mp3', ... and it should work :)
+Audio files can be in any format supported by the browser (not fixed for mp3).
