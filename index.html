@@ -11,46 +11,151 @@
 </head>
 <body>
     <figure style="width:100%">
-        <figcaption>Listen to the <b>12 Rules for Life An Antidote to Chaos</b>:</figcaption>
-        <audio style="width:100%" controls>
-            <source src="01.mp3" type="audio/mp3">
-                Your browser does not support the <code>audio</code> element.
-        </audio>
+        <figcaption>Jordan B. Peterson - <b>12 Rules for Life An Antidote to Chaos</b></figcaption>
+        <audio style="width:100%" controls src="01.mp3"></audio>
     </figure>
     
-    <button id="pause">pause</button>
-    <button id="play">play</button>
-	<button id="prev">prev</button>
-	<button id="next">next</button>
+    <ul>
+        <li>File: <span id="chapterNum"></span></li>
+        <li>Time: <span id="posNum"></span></li>
+        <li>Speed: <span id="speed"></span></li>
+    </ul>
 
+    <div class="form-group">
+        <label style="display: block; margin: 8px 4px;"><input id="backFirstTime" type="checkbox"> Back 15s first time</label>
+        <label style="display: block; margin: 8px 4px;"><input id="autoNext" type="checkbox"> Auto start next chapter</label>
+        
+        <div style="display: block" class="btn-group" role="group" aria-label="Player control">
+            <button style="margin: 8px 4px; width: 16em;" id="play" class="btn btn-primary" type="button">Play</button>
+            <!-- <button id="pause" class="btn btn-secondary" type="button">Pause</button> -->
+        </div>
+
+        <div style="display: block" class="btn-group" role="group" aria-label="Chapter selection">
+            <button style="margin: 8px 4px;" id="prev" class="btn btn-secondary" type="button">Prev Chapter</button>
+            <button style="margin: 8px 4px;" id="next" class="btn btn-secondary" type="button">Next Chapter</button>
+        </div>
+
+        Time:
+        <div style="display: block" class="btn-group" role="group" aria-label="Time manipulation">
+            <button style="margin: 8px 4px;" id="begin" class="btn btn-secondary" type="button">Restart chapter</button>
+            <button style="margin: 8px 4px;" id="back10" class="btn btn-secondary" type="button">Back 10s</button>
+            <button style="margin: 8px 4px;" id="next10" class="btn btn-secondary" type="button">Next 10s</button>
+        </div>
+
+        Speed:
+        <div style="display: block" class="btn-group" role="group" aria-label="Speed manipulation">
+            <button style="margin: 8px 4px;" id="defaultSpeed" class="btn btn-secondary" type="button">Default (1.0)</button>
+            <button style="margin: 8px 4px;" id="slower" class="btn btn-secondary" type="button">Slower (-0.1)</button>
+            <button style="margin: 8px 4px;" id="faster" class="btn btn-secondary" type="button">Faster (+0.1)</button>
+        </div>
+    </div>
+
+    <hr>
+
+    Rules:
+    <ol>
+		<li><a href="#" class="rulelink" data-file="02.mp3">Stand up straight with your shoulders back</a></li>
+        <li><a href="#" class="rulelink" data-file="03.mp3">Treat yourself like you are someone you are responsible for helping</a></li>
+        <li><a href="#" class="rulelink" data-file="05.mp3">Make friends with people who want the best for you</a></li>
+        <li><a href="#" class="rulelink" data-file="06.mp3">Compare yourself with who you were yesterday, not with who someone else is today</a></li>
+        <li><a href="#" class="rulelink" data-file="07.mp3">Do not let your children do anything that makes you dislike them</a></li>
+        <li><a href="#" class="rulelink" data-file="09.mp3">Set your house in perfect order before you criticize the world</a></li>
+        <li><a href="#" class="rulelink" data-file="10.mp3">Pursue what is meaningful (not what is expedient)</a></li>
+        <li><a href="#" class="rulelink" data-file="12.mp3">Tell the truth — or, at least, don’t lie</a></li>
+        <li><a href="#" class="rulelink" data-file="13.mp3">Assume that the person you are listening to might know something you don’t</a></li>
+        <li><a href="#" class="rulelink" data-file="14.mp3">Be precise in your speech</a></li>
+        <li><a href="#" class="rulelink" data-file="15.mp3">Do not bother children when they are skate-boarding</a></li>
+        <li><a href="#" class="rulelink" data-file="17.mp3">Pet a cat when you encounter one on the street</a></li>
+    </ol>
+
+    <img src="cover.jpg" alt="cover">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.slim.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.1/umd/popper.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script>
-    $(function() {
-        const backInTime = 1;   // in seconds
-        
-        let isFirst = true;
+    const backInTime = 15;   // in seconds
+    let isFirst = true;
+    let noAutoSave = false;
 
-        var sourceElement = document.querySelector("source");
-        //var originalSourceUrl = sourceElement.getAttribute("src");
-        var audioElement = document.querySelector("audio");
+    $(function() {
         
+        //var originalSourceUrl = sourceElement.getAttribute("src");
+        const sourceElement = document.querySelector("source");
+        const audioElement = document.querySelector("audio");
+        const $autoNext = $('#autoNext');
+        
+
         if (!localStorage.getItem('file')) {
             saveToStorage();
         }
         
-        setInterval(() => {
-            if(!audioElement.paused){
-                saveToStorage();
-            }
-        }, backInTime * 500);    // save each backInTime/2 seconds
+        isFirst = false;
+        loadFromStorage();
+        isFirst = true;
 
-        function saveToStorage() {    
-            localStorage.setItem('file', audioElement.getAttribute("src") || sourceElement.getAttribute("src"));
-            localStorage.setItem('position', audioElement.currentTime);
+        updateUI();
+        
+        // auto save
+        setInterval(() => {
+            if (!noAutoSave && !audioElement.paused) {
+                saveToStorage();
+                updateUI();
+            }
+        }, 1000);
+        
+        // auto next chapter
+        setInterval(() => {
+            if (audioElement.paused && 
+                audioElement.currentTime === audioElement.duration &&
+                $autoNext.is(':checked')) {
+                    $('#next').click();
+            }
+        }, 1000);
+
+        function saveToStorage(saveFileOnly = false) {
+            const url = audioElement.getAttribute("src");
+            localStorage.setItem('file', url /* || sourceElement.getAttribute("src") */ );
+            if (!saveFileOnly) {
+                localStorage.setItem('position_c' + getChapterNumber(url), audioElement.currentTime);
+                localStorage.setItem('speed', audioElement.playbackRate);
+                // localStorage.setItem('backFirstTime', $('#backFirstTime').is(':checked'));
+                // localStorage.setItem('autoNext', $('#autoNext').is(':checked'));
+            }
         }
+        
+        function loadFromStorage() {
+            const url = localStorage.getItem('file');
+            const t = localStorage.getItem('position_c' + getChapterNumber(url)) || 0;
+            const speed = localStorage.getItem('speed') || 1.0;
+            const backFirstTime = JSON.parse(localStorage.getItem('backFirstTime') || 'true');
+            const autoNext = JSON.parse(localStorage.getItem('autoNext') || 'true');
+
+            $('#backFirstTime').attr('checked', backFirstTime);
+            $('#autoNext').attr('checked', autoNext);
+            
+            if (audioElement.getAttribute("src") !== url) {
+                audioElement.src = url;
+            }
+            audioElement.currentTime = Math.max(0, t - (isFirst && $('#backFirstTime').is(':checked') ? backInTime : 0));
+            audioElement.playbackRate = speed;
+        }
+
+        $('#backFirstTime').change(() => {
+            localStorage.setItem('backFirstTime', $('#backFirstTime').is(':checked'));
+        });
+        $('#autoNext').change(() => {
+            localStorage.setItem('autoNext', $('#autoNext').is(':checked'));
+        });
+
+        
+        function updateUI() {
+            $('#chapterNum').text(getChapterNumber(audioElement.getAttribute("src")));
+            const t = new Date(1000 * audioElement.currentTime).toISOString().substr(11, 8).replace(/^[0:]+/, "");
+            $('#posNum').text(t == '' ? '0' : t);
+            $('#speed').text(audioElement.playbackRate.toFixed(1));
+        }
+
 
         function pause() {
             isFirst = false;
@@ -58,6 +163,8 @@
             saveToStorage();
             
             audioElement.pause();
+            
+            $('#play').text('Play');
 
             // sourceElement.setAttribute("src", "");
             // audioElement.pause();
@@ -73,24 +180,130 @@
             //     audioElement.load(); // This restarts the stream download
             // }
 
-            if(isFirst){
-                audioElement.currentTime = Math.max(0, localStorage.getItem('position') - backInTime);
-                isFirst = false;
-            }
+            loadFromStorage();
+            isFirst = false;
+            
+            updateUI();
 
             audioElement.play();
             saveToStorage();
+
+            $('#play').text('Pause');
         }
         
-        $('#pause').click(function (e) { 
-            e.preventDefault();
-            pause();
-        });
+        // $('#pause').click(function (e) { 
+        //     e.preventDefault();
+        //     pause();
+        // });
        
         $('#play').click(function (e) { 
             e.preventDefault();
-            play();
+            if ($(this).text() === 'Play') {
+                play();
+            } else {
+                pause();
+            }
         });
+        
+        $('#prev').click(function (e) { 
+            e.preventDefault();
+            pause();
+            
+            noAutoSave = true;
+
+            audioElement.src = changeFileNumber(audioElement.getAttribute("src"), -1);
+            audioElement.currentTime = 0;
+            saveToStorage(true);
+            isFirst = false;
+            play();
+            
+            updateUI();
+
+            noAutoSave = false;
+        });
+        
+        $('#next').click(function (e) { 
+            e.preventDefault();
+            pause();
+            
+            noAutoSave = true;
+            
+            audioElement.src = changeFileNumber(audioElement.getAttribute("src"), 1);
+            audioElement.currentTime = 0;
+            saveToStorage(true);
+            isFirst = false;
+            play();
+            
+            updateUI();
+
+            noAutoSave = false;
+        });
+        
+        function isNumeric(num) {
+            return (typeof(num) === 'number' || typeof(num) === "string" && num.trim() !== '') && !isNaN(num);
+        }
+
+        // 'xyz01.mp3' <-> 'xyz02.mp3'
+        function changeFileNumber(url, delta) {
+            // separate url on numbers
+            const split = url.split(/(\d+)/).filter((el) => el != ''); 
+            
+            // change the last number (ignoring the '3' from '.mp3' ext)
+            for (let i = split.length-1 - (split[split.length-1] === '3' ? 1 : 0); i>=0; i--) {
+                if (isNumeric(split[i])) {
+                    let val = parseInt(split[i]);
+                    const lt0 = val < 0;
+                    if (lt0) { val *= -1; }
+                    const newVal = Math.max(1, val + parseInt(delta));
+                    split[i] =  (lt0 ? '-' : '') +  // it act not as a minus sign, but like a hyphen ('-')
+                                (newVal < 10 ? '0' : '') + // add leading '0' if necessary
+                                newVal.toString();
+                    break;
+                }
+            }
+            
+            return split.join('');  // return new url
+        }
+        
+        // 'xyz02.mp3' -> 2
+        function getChapterNumber(url) {
+            // separate url on numbers
+            const split = url.split(/(\d+)/).filter((el) => el != ''); 
+            
+            // get the last number (ignoring the '3' from '.mp3' ext)
+            for (let i = split.length-1 - (split[split.length-1] === '3' ? 1 : 0); i>=0; i--) {
+                if (isNumeric(split[i])) {
+                    const val = parseInt(split[i]);
+                    return val < 0 ? val * -1 : val;    // ignore hyphens
+                }
+            }
+            
+            return false;   // error
+        }
+
+        
+        $('.rulelink').click(function() { 
+            pause();
+            
+            noAutoSave = true;
+
+            //let x = $(this).data('file');
+            audioElement.src = $(this).data('file');
+            audioElement.currentTime = 0;
+            saveToStorage(true);
+            isFirst = false;
+            play();
+            
+            updateUI();
+
+            noAutoSave = false;
+        });
+        $('#defaultSpeed').click(() => { audioElement.playbackRate = 1.0; updateUI(); });
+        $('#slower').click(() => { audioElement.playbackRate -= 0.1; updateUI(); });
+        $('#faster').click(() => { audioElement.playbackRate += 0.1; updateUI(); });
+        $('#begin').click(() => { audioElement.currentTime = 0; updateUI(); });
+        $('#back10').click(() => { audioElement.currentTime -= 10; updateUI(); });
+        $('#next10').click(() => { audioElement.currentTime += 10; updateUI(); });
     });
 </script>
 
