@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<meta name="Description" content="Enter your description here"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/all.min.css">
+<title>12 Rules for Life An Antidote to Chaos</title>
+</head>
+<body>
+    <figure style="width:100%">
+        <figcaption>Listen to the <b>12 Rules for Life An Antidote to Chaos</b>:</figcaption>
+        <audio style="width:100%" controls>
+            <source src="01.mp3" type="audio/mp3">
+                Your browser does not support the <code>audio</code> element.
+        </audio>
+    </figure>
+    
+    <button id="pause">pause</button>
+    <button id="play">play</button>
+	<button id="prev">prev</button>
+	<button id="next">next</button>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.1/umd/popper.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    $(function() {
+        const backInTime = 1;   // in seconds
+        
+        let isFirst = true;
+
+        var sourceElement = document.querySelector("source");
+        //var originalSourceUrl = sourceElement.getAttribute("src");
+        var audioElement = document.querySelector("audio");
+        
+        if (!localStorage.getItem('file')) {
+            saveToStorage();
+        }
+        
+        setInterval(() => {
+            if(!audioElement.paused){
+                saveToStorage();
+            }
+        }, backInTime * 500);    // save each backInTime/2 seconds
+
+        function saveToStorage() {    
+            localStorage.setItem('file', audioElement.getAttribute("src") || sourceElement.getAttribute("src"));
+            localStorage.setItem('position', audioElement.currentTime);
+        }
+
+        function pause() {
+            isFirst = false;
+            
+            saveToStorage();
+            
+            audioElement.pause();
+
+            // sourceElement.setAttribute("src", "");
+            // audioElement.pause();
+            // settimeout, otherwise pause event is not raised normally
+            // setTimeout(function () { 
+            //     audioElement.load(); // This stops the stream from downloading
+            // });
+        }
+
+        function play() {
+            // if (!sourceElement.getAttribute("src")) {
+            //     sourceElement.setAttribute("src", localStorage.getItem('file'));
+            //     audioElement.load(); // This restarts the stream download
+            // }
+
+            if(isFirst){
+                audioElement.currentTime = Math.max(0, localStorage.getItem('position') - backInTime);
+                isFirst = false;
+            }
+
+            audioElement.play();
+            saveToStorage();
+        }
+        
+        $('#pause').click(function (e) { 
+            e.preventDefault();
+            pause();
+        });
+       
+        $('#play').click(function (e) { 
+            e.preventDefault();
+            play();
+        });
+    });
+</script>
+
+</body>
+</html>
